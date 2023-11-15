@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from app.config import Settings
 from app.routes import router
+from livereload import Server
 
 settings = Settings()
 
@@ -17,8 +18,7 @@ def get_app() -> FastAPI:
 
 app = get_app()
 
-
 if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    server = Server(app)
+    server.watch('app/')  # replace with the path to your templates
+    server.serve(root='.', host='0.0.0.0', port=8000)
