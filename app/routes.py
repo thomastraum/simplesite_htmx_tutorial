@@ -1,13 +1,15 @@
 from fastapi import APIRouter, Request
-from fastapi.templating import Jinja2Templates
+# from fastapi.templating import Jinja2Templates
+from jinja2_fragments.fastapi import Jinja2Blocks
 
 from app.config import Settings
 
 from app.crud import CRUD
+import pprint
 
 settings = Settings()
 
-templates = Jinja2Templates(directory=settings.TEMPLATE_DIR)
+templates =  Jinja2Blocks(directory=settings.TEMPLATE_DIR)
 templates.env.auto_reload = True
 router = APIRouter()
 
@@ -24,14 +26,20 @@ def index(request: Request):
 
 @router.get("/about")
 def index(request: Request):
-    return templates.TemplateResponse("about.html", {"request": request, "page_title":"about"})
+    return templates.TemplateResponse("about.html", {
+        "request": request, 
+        "page_title":"about"
+    })
 
 @router.get("/catalog")
 def catalog(request: Request):
     """Catalog page - display information about artists in database."""
 
+    template = "catalog.html"
+    
     db = CRUD().with_table("artist_details")
     artists = db.all_items()
+    # pprint.pprint(artists)
 
     def get_members(artist: dict):
         """This returns active members from the artist_details table. This
@@ -51,6 +59,29 @@ def catalog(request: Request):
             return artist["uri"]  # send discogs uri if no url found
         return artist["urls"][0]
 
+    
+    def get_profile(artist: dict):
+        if not artist["profile"]:
+            return "No profile available"
+        else:
+            profile = artist["profile"]
+            profile = profile.replace("[", "<").replace("]", ">")
+            return profile
+
+    if request.headers.get("hx-request"):
+        id = request.headers.get("HX-Trigger")
+        artist = db.find("id", int(id))
+
+        return templates.TemplateResponse(
+            "artist/profile.html",
+            {
+                "request": request,
+                "artist": artist[0],
+                "get_website": get_website,
+                "get_profile": get_profile,
+            }
+        )
+
     return templates.TemplateResponse(
             "catalog.html",
             {
@@ -60,3 +91,12 @@ def catalog(request: Request):
                 "get_website": get_website,
             }
         )
+
+
+@router.get("/profile")
+def profile(request: Request):
+    """Profile page - display information about a specific artist."""
+
+    # db = CRUD().with_table("artist_details")
+    if request.headers.get("hx-request"):
+        pass

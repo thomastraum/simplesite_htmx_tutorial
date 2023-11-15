@@ -15,12 +15,13 @@
     <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', path='favicon/favicon-32x32.png') }}">
     <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', path='favicon/favicon-16x16.png') }}">
     <link rel="icon" type="image/png" sizes="192x192" href="{{ url_for('static', path='favicon/android-chrome-192x192.png') }}">
+    <script src="{{url_for('static', path='js/htmx.min.js')}}"></script>
 </head>
 <body>
     {% block header %}
         {% include "/shared/_header.html" %}
     {% endblock %}
-    
+
     {% block content %} 
         _base html
     {% endblock %}
