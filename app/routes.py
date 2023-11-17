@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Request, Form
+from typing import Annotated
 # from fastapi.templating import Jinja2Templates
 from jinja2_fragments.fastapi import Jinja2Blocks
 
@@ -100,3 +101,46 @@ def profile(request: Request):
     # db = CRUD().with_table("artist_details")
     if request.headers.get("hx-request"):
         pass
+
+@router.post("/search")
+def search_post(request: Request, search: Annotated[str, Form()]):
+
+    block_name = None
+    if request.headers.get("hx-request"):
+        block_name = "artist_card"
+
+    db = CRUD().with_table("artist_details")
+
+    results=[]
+    artists = db.search(key="name", value=search)
+
+    def get_members(artist: dict):
+        """This returns active members from the artist_details table. This
+        method can be used within the Jinja template."""
+
+        if "members" not in artist:
+            return [artist["name"]]
+        all_members = artist["members"]
+        active_members = []
+        for member in all_members:
+            if member["active"]:
+                active_members.append(member["name"])
+        return active_members # limit 14 members
+
+    def get_website(artist: dict):
+        if "urls" not in artist:
+            return artist["uri"]  # send discogs uri if no url found
+        return artist["urls"][0]
+
+    return templates.TemplateResponse(
+        "catalog.html",
+        {
+            "request": request,
+            "results": results,
+            "artists": artists,
+            "get_website": get_website,
+            "get_members": get_members,
+
+        },
+        block_name=block_name
+    )
